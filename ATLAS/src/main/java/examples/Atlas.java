@@ -4,7 +4,8 @@ package examples;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import ReadingUtils.ReadingsExtractorUtil;
+import ReadingUtils.VariantsCallerFactory;
+
 
 public class Atlas {
 	
@@ -19,7 +20,7 @@ public class Atlas {
 			final String referencePath= "F:\\chm13v2.0.fa";
 			final String outputFile= "F:\\results.txt";
 			
-			ReadingsExtractorUtil.process(bamPath,referencePath,outputFile,region);
+			VariantsCallerFactory.createVariantssCaller(bamPath,referencePath,outputFile,region,8,100000).process();
 
 		} catch (Exception e) {
 			e.printStackTrace();

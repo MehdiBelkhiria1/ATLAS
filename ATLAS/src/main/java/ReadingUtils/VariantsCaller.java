@@ -16,9 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import Utils.Utils;
-import htsjdk.samtools.CigarElement;
-import htsjdk.samtools.CigarOperator;
-import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
@@ -26,22 +23,38 @@ import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 
-public class ReadingsExtractorUtil {
+public class VariantsCaller {
 	
-	private static final Logger logger = LogManager.getLogger(ReadingsExtractorUtil.class);
+	private static final Logger logger = LogManager.getLogger(VariantsCaller.class);
 	
-	public static byte DEL='D';
+	private int chunkSize=100000;
 	
-	public final static int chunkSize=100000;
+	private int numThreads = 1;
+	private String bamFilePath;
+	private String fastaFilePath; 
+	private String outputFile; 
+	private String region;
+	private AtomicInteger idleThreadsCounter=null;
+	private ExecutorService executor = null;
 	
-	// Define number of threads
-	static int numThreads = 1;
-	static AtomicInteger idleThreadsCounter=new AtomicInteger(numThreads);
-	// Create a thread pool with a fixed number of threads
-	static final ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+	public VariantsCaller() {
+		
+	}
+	public VariantsCaller(String bamFilePath, String fastaFilePath, String outputFile, String region, int numThreads, int chunkSize) {
+		this.numThreads=numThreads;
+		this.chunkSize=chunkSize;
+		this.bamFilePath=bamFilePath;
+		this.fastaFilePath=fastaFilePath; 
+		this.outputFile=outputFile; 
+		this.region=region;
+		
+		this.idleThreadsCounter=new AtomicInteger(numThreads);
+		this.executor = Executors.newFixedThreadPool(numThreads);
+	}
+	
 	static final TreeMap<Integer,Future<ResultBuffer>> futures = new TreeMap<>();
 	
-	public  static final void  process(final String bamFilePath, final String fastaFilePath, final String outputFile, final String region) throws Exception {
+	public final void  process() throws Exception {
 		
 		final String[] regionParts = region.split(":");
 		final String chromosome = regionParts[0];
@@ -49,7 +62,7 @@ public class ReadingsExtractorUtil {
 		int regionEnd = Integer.parseInt(regionParts[1].split("-")[1]);
 		final int numberOfAnalysedBases=regionEnd-regionStart;
 		
-		final TreeMap<Integer,Integer> intervals=prepareThreadIntervals(numThreads, regionStart, regionEnd);
+		final TreeMap<Integer,Integer> intervals= Utils.prepareThreadIntervals(numThreads, regionStart, regionEnd);
 		final long startTime = System.nanoTime();
 		try (ReferenceSequenceFile referenceSequenceFile = ReferenceSequenceFileFactory.getReferenceSequenceFile(new File(fastaFilePath));) {
 		    final SamReaderFactory samReaderFactory = SamReaderFactory.makeDefault().validationStringency(ValidationStringency.SILENT);
@@ -98,7 +111,7 @@ public class ReadingsExtractorUtil {
 	}
 	
 	
-    public static final void processThreadWithExecutor( final String bamFilePath,final String fastaFilePath,final byte[] referenceBases,final SamReaderFactory samReaderFactory,final String chromosome,final int regionStart,final int regionEnd,final int processId) throws Exception {
+    private final void processThreadWithExecutor( final String bamFilePath,final String fastaFilePath,final byte[] referenceBases,final SamReaderFactory samReaderFactory,final String chromosome,final int regionStart,final int regionEnd,final int processId) throws Exception {
     	Future<ResultBuffer> future = executor.submit(() ->{
 			ResultBuffer resultBuffer=null;
 			try {
@@ -112,7 +125,7 @@ public class ReadingsExtractorUtil {
 	}
     
 
-	public static final ResultBuffer processThread(final String bamFilePath,final String fastaFilePath,final byte[] referenceBases,final SamReaderFactory samReaderFactory,final String chromosome,final int regionStart,final int regionEnd,final int processId) throws Exception {
+	private final ResultBuffer processThread(final String bamFilePath,final String fastaFilePath,final byte[] referenceBases,final SamReaderFactory samReaderFactory,final String chromosome,final int regionStart,final int regionEnd,final int processId) throws Exception {
 		idleThreadsCounter.decrementAndGet();
 		final ResultBuffer result=new ResultBuffer();
 		try (SamReader samReader = samReaderFactory.open(new File(bamFilePath))) {
@@ -142,30 +155,9 @@ public class ReadingsExtractorUtil {
 		}
 		return result;
 	}
+
 	
-	
-	public final static TreeMap<Integer,Integer> prepareThreadIntervals(final int numberOfChunks,final int regionStart,final int regionEnd){
-		final TreeMap<Integer,Integer> intervals=new TreeMap<>();
-		int numberOfAnalysedBases=regionEnd-regionStart;
-		int chunkSize=numberOfAnalysedBases/numberOfChunks;
-		int remainingChunkSize=numberOfAnalysedBases%numberOfChunks;
-		int lastIntervalEnding=regionStart+chunkSize;
-		for(int i=0;i<numberOfChunks;i++) {
-			lastIntervalEnding=regionStart+(i+1)*chunkSize;
-			intervals.put(regionStart+i*chunkSize, lastIntervalEnding);
-		}
-		if(remainingChunkSize>0) {
-			int remainingchunkEnding=lastIntervalEnding+remainingChunkSize;
-			if(remainingChunkSize<chunkSize/10) {
-				intervals.put(intervals.lastKey(), remainingchunkEnding);
-			}else {
-				intervals.put(lastIntervalEnding, remainingchunkEnding);
-			}
-		}
-		return intervals;
-	}
-	
-	public static final List<Chunk> prepareChunks(final int regionStart,final int regionEnd ,final String chromosome) {
+	private final List<Chunk> prepareChunks(final int regionStart,final int regionEnd ,final String chromosome) {
 		final int numberOfAnalysedBases=regionEnd-regionStart;
 		List<Chunk> chunks=new ArrayList<Chunk>();
 		int nchunks=numberOfAnalysedBases/chunkSize;
@@ -185,93 +177,43 @@ public class ReadingsExtractorUtil {
 		return chunks;
 	}
 	
-
-	public static final void processRecord(final SAMRecord record, final char[] chromosome, int regionStart, int regionEnd,final Map<Integer, Position> positions,final byte[] referenceBases) {
-		int recordStart = record.getAlignmentStart();
-        int recordEnd = record.getAlignmentEnd();
-        int mappingQuality=record.getMappingQuality();
-        final byte[] readBases= record.getReadBases();
-        
-		if ((!record.getReadUnmappedFlag() && record.getCigar().containsOperator(CigarOperator.N))) {
-			return;
-		}
-		
-		int startPos = 0;
-		int endPos = record.getReadLength()-1;
-		//int currentRealPosition = recordStart;
-		//for debug
-		int SCENARIO=0;
-		//CAS 2
-		if(regionEnd>=recordEnd && regionStart<=recordStart) {
-			SCENARIO=2;
-			startPos = 0;
-			endPos = record.getReadLength()-1;
-		}
-		//CAS 1
-		else if(regionStart<=recordEnd && regionStart>recordStart && regionEnd>recordEnd) {
-			SCENARIO=1;
-			startPos=record.getReadLength()-1-(recordEnd-regionStart);
-			endPos = record.getReadLength()-1;
-		}
-		//CAS 3
-		else if(regionEnd<recordEnd && regionEnd>=recordStart && regionStart<recordStart) {
-			SCENARIO=3;
-			startPos=0;
-			endPos=regionEnd-recordStart;
-		}
-		//CAS 4
-		else if(regionStart>=recordStart && regionEnd<=recordEnd) {
-			SCENARIO=4;
-			startPos=regionStart-recordStart;
-			endPos=startPos+(regionEnd-regionStart);
-		}
-		
-		// Iterate over the CIGAR string to adjust positions
-		int pos=0;
-		int positionTiSkipSize=0;
-		int[] thresholds=new int[record.getReadLength()];
-        for (CigarElement cigarElement : record.getCigar().getCigarElements()) {
-            CigarOperator op = cigarElement.getOperator();
-            int length = cigarElement.getLength();
-            if(op==CigarOperator.D) {
-            	positionTiSkipSize+=length;
-            	for(int i=pos;i<pos+length;i++) {
-            		thresholds[i]=-1;
-            	}
-            }
-            else if(op==CigarOperator.I){
-            	positionTiSkipSize+=length;
-            	for(int i=pos;i<pos+length;i++) {
-            		thresholds[i]=1;
-            	}
-            }
-            pos+=length;
-        }
-        
-		for (int i = startPos; i < endPos; i++) {
-			int currentRealPosition=record.getReferencePositionAtReadPosition(i);
-			
-			if(currentRealPosition==0 || currentRealPosition<regionStart || currentRealPosition>regionEnd) {
-				continue;
-			}
-			
-			int threshold=0;
-			if(positionTiSkipSize>0) {
-				for(int k=0;k<i;k++) {
-					threshold+=thresholds[k];
-				}
-			}
-			
-			Position p = positions.get(currentRealPosition+1);
-			if (p == null) {
-				p = new Position(chromosome, currentRealPosition+1, Utils.toUpperCase(referenceBases[currentRealPosition]));
-				positions.put(currentRealPosition+1, p);
-			}
-			if(threshold>0) {
-				System.out.println(i+threshold+" "+(char)readBases[i+threshold]+" pos "+(currentRealPosition+1+threshold)+" ref base:"+(char)referenceBases[currentRealPosition+threshold]);
-			}
-			p.addRead(Utils.toUpperCase(readBases[i+threshold]),mappingQuality);
-		}
+	public int getChunkSize() {
+		return chunkSize;
 	}
+	public void setChunkSize(int chunkSize) {
+		this.chunkSize = chunkSize;
+	}
+	public int getNumThreads() {
+		return numThreads;
+	}
+	public void setNumThreads(int numThreads) {
+		this.numThreads = numThreads;
+	}
+	public String getBamFilePath() {
+		return bamFilePath;
+	}
+	public void setBamFilePath(String bamFilePath) {
+		this.bamFilePath = bamFilePath;
+	}
+	public String getFastaFilePath() {
+		return fastaFilePath;
+	}
+	public void setFastaFilePath(String fastaFilePath) {
+		this.fastaFilePath = fastaFilePath;
+	}
+	public String getOutputFile() {
+		return outputFile;
+	}
+	public void setOutputFile(String outputFile) {
+		this.outputFile = outputFile;
+	}
+	public String getRegion() {
+		return region;
+	}
+	public void setRegion(String region) {
+		this.region = region;
+	}
+	
+	
 
 }

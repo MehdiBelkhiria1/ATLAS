@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import Utils.Utils;
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SamReader;
@@ -35,7 +36,7 @@ public class Chunk {
 				iter = samReader.query(chromosome, regionStart, regionEnd, false);
 				while (iter.hasNext()) {
 					final SAMRecord rec = iter.next();
-					ReadingsExtractorUtil.processRecord(rec, chr, regionStart, regionEnd, positions, referenceBases);
+					Utils.processRecord(rec, chr, regionStart, regionEnd, positions, referenceBases);
 				}
 			}catch(Exception e) {
 				System.out.println(e.getMessage());
