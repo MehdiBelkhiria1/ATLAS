@@ -1,4 +1,4 @@
-package ReadingUtils;
+package variants;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -15,13 +15,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import Utils.Utils;
 import htsjdk.samtools.SamReader;
 import htsjdk.samtools.SamReaderFactory;
 import htsjdk.samtools.ValidationStringency;
 import htsjdk.samtools.reference.ReferenceSequence;
 import htsjdk.samtools.reference.ReferenceSequenceFile;
 import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
+import utils.Utils;
 
 public class VariantsCaller {
 	

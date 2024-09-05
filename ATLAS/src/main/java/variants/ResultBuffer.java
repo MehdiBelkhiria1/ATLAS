@@ -1,4 +1,4 @@
-package ReadingUtils;
+package variants;
 
 public class ResultBuffer {
 	

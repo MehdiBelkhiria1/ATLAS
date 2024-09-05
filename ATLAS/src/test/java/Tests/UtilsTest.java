@@ -6,7 +6,7 @@ import java.util.TreeMap;
 
 import org.junit.jupiter.api.Test;
 
-import Utils.Utils;
+import utils.Utils;
 
 public class UtilsTest {
 	

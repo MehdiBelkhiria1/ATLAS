@@ -1,12 +1,12 @@
-package Utils;
+package utils;
 
 import java.util.Map;
 import java.util.TreeMap;
 
-import ReadingUtils.Position;
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
 import htsjdk.samtools.SAMRecord;
+import variants.Position;
 
 public class Utils {
 	

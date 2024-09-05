@@ -1,8 +1,9 @@
-package ReadingUtils;
+package variants;
 
 import java.util.ArrayList;
 import java.util.List;
-import Utils.Utils;
+
+import utils.Utils;
 
 
 public class Position{
