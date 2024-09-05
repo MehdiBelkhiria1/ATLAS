@@ -11,7 +11,6 @@ public class ResultBuffer {
 	}
 	
 	public ResultBuffer(int id, StringBuilder result, int totalReads, int totalSnps) {
-		super();
 		this.id = id;
 		this.result = result;
 	}

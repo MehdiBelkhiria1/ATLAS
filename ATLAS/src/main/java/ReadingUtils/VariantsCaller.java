@@ -25,11 +25,10 @@ import htsjdk.samtools.reference.ReferenceSequenceFileFactory;
 
 public class VariantsCaller {
 	
-	private static final Logger logger = LogManager.getLogger(VariantsCaller.class);
+	private final Logger logger = LogManager.getLogger(VariantsCaller.class);
 	
-	private int chunkSize=100000;
-	
-	private int numThreads = 1;
+	private int chunkSize;
+	private int numThreads;
 	private String bamFilePath;
 	private String fastaFilePath; 
 	private String outputFile; 
@@ -47,12 +46,11 @@ public class VariantsCaller {
 		this.fastaFilePath=fastaFilePath; 
 		this.outputFile=outputFile; 
 		this.region=region;
-		
 		this.idleThreadsCounter=new AtomicInteger(numThreads);
 		this.executor = Executors.newFixedThreadPool(numThreads);
 	}
 	
-	static final TreeMap<Integer,Future<ResultBuffer>> futures = new TreeMap<>();
+	final TreeMap<Integer,Future<ResultBuffer>> futures = new TreeMap<>();
 	
 	public final void  process() throws Exception {
 		

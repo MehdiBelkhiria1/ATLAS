@@ -55,21 +55,9 @@ public class Position{
 		return null;
 	}
 	
+	// TODO
 	public String toVCF_string() {
 		StringBuilder result=new StringBuilder();
-		/*
-		result
-		.append(chromosome+" ")
-		.append("P="+position+" ;")
-		.append(t_readings!=0?("x"+t_readings+"T ;"):"")
-		.append(c_readings!=0?("x"+c_readings+"C ;"):"")
-		.append(g_readings!=0?("x"+g_readings+"G ;"):"")
-		.append(a_readings!=0?("x"+a_readings+"A ;"):"")
-		.append("Reference Allele: "+referenceAllele+" ;")
-		.append("Sample Allele: "+sampleAllele+" ;")
-		.append(mutationDetected?" SNP: "+referenceAllele+" -> "+sampleAllele+" score="+(int)score+"%":"")
-		.append("\n");
-		*/
 		return result.toString();
 	}
 
