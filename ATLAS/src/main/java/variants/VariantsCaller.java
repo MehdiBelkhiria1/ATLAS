@@ -25,7 +25,7 @@ import utils.Utils;
 
 public class VariantsCaller {
 	
-	private final Logger logger = LogManager.getLogger(VariantsCaller.class);
+	private final Logger LOGGER = LogManager.getLogger(VariantsCaller.class);
 	
 	private int chunkSize;
 	private int numThreads;
@@ -35,17 +35,19 @@ public class VariantsCaller {
 	private String region;
 	private AtomicInteger idleThreadsCounter=null;
 	private ExecutorService executor = null;
+	private boolean viewAll = false;
 	
 	public VariantsCaller() {
 		
 	}
-	public VariantsCaller(String bamFilePath, String fastaFilePath, String outputFile, String region, int numThreads, int chunkSize) {
+	public VariantsCaller(String bamFilePath, String fastaFilePath, String outputFile, String region, int numThreads, int chunkSize, boolean viewAll) {
 		this.numThreads=numThreads;
 		this.chunkSize=chunkSize;
 		this.bamFilePath=bamFilePath;
 		this.fastaFilePath=fastaFilePath; 
 		this.outputFile=outputFile; 
 		this.region=region;
+		this.viewAll=viewAll;
 		this.idleThreadsCounter=new AtomicInteger(numThreads);
 		this.executor = Executors.newFixedThreadPool(numThreads);
 	}
@@ -76,7 +78,7 @@ public class VariantsCaller {
 				processThreadWithExecutor(bamFilePath, fastaFilePath, referenceBases, samReaderFactory, chromosome, entry.getKey(), entry.getValue(), entry.getKey());
 			}
 		}catch(Exception e) {
-			logger.error(e.getMessage());
+			LOGGER.error(e.getMessage());
 			throw e;
 		}finally {
 			executor.shutdown();
@@ -137,7 +139,7 @@ public class VariantsCaller {
 			int loopSize=chunks.size();
 			for(int i=0;i<loopSize;i++) {
 				Chunk chunk=chunks.get(i);
-				chunk.process(samReader, referenceBases);
+				chunk.process(samReader, referenceBases, viewAll);
 				result.totalReads+=chunk.readCount;
 				result.totalSnps+=chunk.snps.size();
 				for(Position p:chunk.snps){
@@ -211,7 +213,12 @@ public class VariantsCaller {
 	public void setRegion(String region) {
 		this.region = region;
 	}
-	
+	public boolean isViewAll() {
+		return viewAll;
+	}
+	public void setViewAll(boolean viewAll) {
+		this.viewAll = viewAll;
+	}
 	
 
 }

@@ -5,12 +5,13 @@ import variants.VariantsCallerFactory;
 
 public class InputProcessor {
 	
-	private final static String ref="-f";
-	private final static String input="-i";
-	private final static String output="-o";
-	private final static String threads="-t";
-	private final static String regions="-r";
-	private final static String chunk="-chunk";
+	private final static String REF="-f";
+	private final static String INPUT="-i";
+	private final static String OUTPUT="-o";
+	private final static String THREADS="-t";
+	private final static String REGIONS="-r";
+	private final static String CHUNK="-chunk";
+	private final static String VIEW="view";
 	private String[] args;
 	
 	public InputProcessor(String[] args){
@@ -25,6 +26,7 @@ public class InputProcessor {
 		Integer threadsArg=null;
 		String regionsArg=null;
 		Integer chunkSize=null;
+		boolean isView=false;
 		
 		if(args.length==0) {
 			throw new InvalidArgumentsException();
@@ -33,23 +35,25 @@ public class InputProcessor {
 			for(int i=0;i<args.length;i++) {
 				String arg=args[i];
 				switch(arg) {
-				  case ref:
+				  case REF:
 					  refArg=args[i+1];
 				    break;
-				  case input:
+				  case INPUT:
 					  inputArg=args[i+1];
 				    break;
-				  case output:
+				  case OUTPUT:
 					  outputArg=args[i+1];
 				    break;
-				  case threads:
+				  case THREADS:
 					  threadsArg=Integer.valueOf(args[i+1]);
 				    break;
-				  case regions:
+				  case REGIONS:
 					  regionsArg=args[i+1];
 				    break;
-				  case chunk:
+				  case CHUNK:
 					  chunkSize=Integer.valueOf(args[i+1]);
+				  case VIEW:
+					  isView=true;
 				    break;
 				}
 			}
@@ -61,7 +65,7 @@ public class InputProcessor {
 		}
 		
 		//******
-		VariantsCallerFactory.createVariantssCaller(inputArg,refArg,outputArg,regionsArg,threadsArg,chunkSize).process();
+		VariantsCallerFactory.createVariantsCaller(inputArg,refArg,outputArg,regionsArg,threadsArg,chunkSize,isView).process();
 		
 	}
 

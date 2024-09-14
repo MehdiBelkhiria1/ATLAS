@@ -26,7 +26,7 @@ public class Position{
 		Variant referenceVariant=getVariant(referenceAllele);
 		//filter
 		int referenceReadsCount=referenceVariant!=null?referenceVariant.count:0;
-	    //
+		
 		for (Variant variant : variants) {
 			if(variant.base!=referenceAllele && variant.count>=referenceReadsCount) {
 				variantDetected=true;

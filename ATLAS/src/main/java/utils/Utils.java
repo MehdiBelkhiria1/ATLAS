@@ -44,7 +44,6 @@ public class Utils {
 		
 		int startPos = 0;
 		int endPos = record.getReadLength()-1;
-		//int currentRealPosition = recordStart;
 		//for debug
 		int SCENARIO=0;
 		//CAS 2
@@ -75,19 +74,19 @@ public class Utils {
 		
 		// Iterate over the CIGAR string to adjust positions
 		int pos=0;
-		int positionTiSkipSize=0;
+		int positionToSkipSize=0;
 		int[] thresholds=new int[record.getReadLength()];
         for (CigarElement cigarElement : record.getCigar().getCigarElements()) {
             CigarOperator op = cigarElement.getOperator();
             int length = cigarElement.getLength();
             if(op==CigarOperator.D) {
-            	positionTiSkipSize+=length;
+            	positionToSkipSize+=length;
             	for(int i=pos;i<pos+length;i++) {
             		thresholds[i]=-1;
             	}
             }
             else if(op==CigarOperator.I){
-            	positionTiSkipSize+=length;
+            	positionToSkipSize+=length;
             	for(int i=pos;i<pos+length;i++) {
             		thresholds[i]=1;
             	}
@@ -103,7 +102,7 @@ public class Utils {
 			}
 			
 			int threshold=0;
-			if(positionTiSkipSize>0) {
+			if(positionToSkipSize>0) {
 				for(int k=0;k<i;k++) {
 					threshold+=thresholds[k];
 				}

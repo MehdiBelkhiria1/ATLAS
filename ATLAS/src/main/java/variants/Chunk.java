@@ -27,7 +27,7 @@ public class Chunk {
 		this.chromosome = chromosome;
 	}
 	
-	public final void  process(final SamReader samReader, final byte[] referenceBases)throws Exception{
+	public final void  process(final SamReader samReader, final byte[] referenceBases, boolean viewAll)throws Exception{
 		char[] chr=chromosome.toCharArray();
 		LinkedHashMap<Integer, Position> positions=new LinkedHashMap<>(regionEnd-regionStart);
 		SAMRecordIterator iter=null;
@@ -45,12 +45,13 @@ public class Chunk {
 			for (Map.Entry<Integer,Position> entry : positions.entrySet()) {
 				Position p = entry.getValue();
 				p.processVariants();
-				/*
-				if(p.variantDetected) {
+				
+				if(viewAll) {
+					this.snps.add(p);
+				}else if(p.variantDetected) {
 					this.snps.add(p);
 				}
-				*/
-				this.snps.add(p);
+				
 				totalReadCount+=p.total_readings;
 			}
 			this.readCount=totalReadCount;
