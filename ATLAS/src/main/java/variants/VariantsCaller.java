@@ -25,7 +25,7 @@ import utils.Utils;
 
 public class VariantsCaller {
 	
-	private final Logger LOGGER = LogManager.getLogger(VariantsCaller.class);
+	private static final Logger LOGGER = LogManager.getLogger(VariantsCaller.class);
 	
 	private int chunkSize;
 	private int numThreads;

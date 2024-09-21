@@ -5,12 +5,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import htsjdk.samtools.SAMRecord;
 import htsjdk.samtools.SAMRecordIterator;
 import htsjdk.samtools.SamReader;
 import utils.Utils;
 
 public class Chunk {
+	
+	private static final Logger LOGGER = LogManager.getLogger(Chunk.class);
 	
 	int regionStart;
 	int regionEnd;
@@ -39,7 +44,8 @@ public class Chunk {
 					Utils.processRecord(rec, chr, regionStart, regionEnd, positions, referenceBases);
 				}
 			}catch(Exception e) {
-				System.out.println(e.getMessage());
+				LOGGER.error(e.getMessage());
+				throw e;
 			}
 			long totalReadCount=0l;
 			for (Map.Entry<Integer,Position> entry : positions.entrySet()) {
@@ -56,6 +62,7 @@ public class Chunk {
 			}
 			this.readCount=totalReadCount;
 		}catch(Exception e) {
+			LOGGER.error(e.getMessage());
 			throw e;
 		}finally {
 			if(iter!=null) {

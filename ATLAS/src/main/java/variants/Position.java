@@ -1,6 +1,7 @@
 package variants;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import utils.Utils;
@@ -47,9 +48,52 @@ public class Position{
 		total_readings++;
 	}
 	
+	public final void  addInsert(byte base, byte[] indel, int mappingQuality, boolean isInsert) {
+		addIndel(base, indel, mappingQuality, true);
+	}
+	
+	public final void  addDeletion(byte base, byte[] indel, int mappingQuality, boolean isInsert) {
+		addIndel(base, indel, mappingQuality, false);
+	}
+	
+	public final void  addIndel(byte base, byte[] indel, int mappingQuality, boolean isInsert) {
+		Variant variant=null;
+		if(isInsert) {
+			variant=getInsert(base, indel);
+		}else {
+			variant=getDeletion(base, indel);
+		}
+		
+		if(variant==null) {
+			variant=new Variant();
+			variant.base=base;
+			variants.add(variant);
+		}
+		variant.count++;
+		variant.mappingQuality+=mappingQuality;
+	}
+	
 	public  final Variant getVariant(byte read) {
 		for(Variant variant:variants) {
 			if(variant.base==read) {
+				return variant;
+			}
+		}
+		return null;
+	}
+	
+	public  final Variant getInsert(byte read, byte[] indel) {
+		for(Variant variant:variants) {
+			if(variant.base==read && variant.isInsert && Arrays.equals(indel, variant.indel)) {
+				return variant;
+			}
+		}
+		return null;
+	}
+	
+	public  final Variant getDeletion(byte read, byte[] indel) {
+		for(Variant variant:variants) {
+			if(variant.base==read && variant.isDeletion && Arrays.equals(indel, variant.indel)) {
 				return variant;
 			}
 		}
@@ -61,7 +105,6 @@ public class Position{
 		StringBuilder result=new StringBuilder();
 		return result.toString();
 	}
-
 	
 	public final StringBuilder toStringBuilder() {
 		StringBuilder result=new StringBuilder();

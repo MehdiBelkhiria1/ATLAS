@@ -1,7 +1,9 @@
 package utils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
+
 
 import htsjdk.samtools.CigarElement;
 import htsjdk.samtools.CigarOperator;
@@ -33,91 +35,46 @@ public class Utils {
     
     
     public static final void processRecord(final SAMRecord record, final char[] chromosome, int regionStart, int regionEnd,final Map<Integer, Position> positions,final byte[] referenceBases) {
-		int recordStart = record.getAlignmentStart();
-        int recordEnd = record.getAlignmentEnd();
+
         int mappingQuality=record.getMappingQuality();
-        final byte[] readBases= record.getReadBases();
+        int recordStart = record.getAlignmentStart();
+        int recordEnd = record.getAlignmentEnd();
         
 		if ((!record.getReadUnmappedFlag() && record.getCigar().containsOperator(CigarOperator.N))) {
 			return;
 		}
-		
-		int startPos = 0;
-		int endPos = record.getReadLength()-1;
-		//for debug
-		int SCENARIO=0;
-		//CAS 2
-		if(regionEnd>=recordEnd && regionStart<=recordStart) {
-			SCENARIO=2;
-			startPos = 0;
-			endPos = record.getReadLength()-1;
-		}
-		//CAS 1
-		else if(regionStart<=recordEnd && regionStart>recordStart && regionEnd>recordEnd) {
-			SCENARIO=1;
-			startPos=record.getReadLength()-1-(recordEnd-regionStart);
-			endPos = record.getReadLength()-1;
-		}
-		//CAS 3
-		else if(regionEnd<recordEnd && regionEnd>=recordStart && regionStart<recordStart) {
-			SCENARIO=3;
-			startPos=0;
-			endPos=regionEnd-recordStart;
-		}
-		//c 4
-		else if(regionStart>=recordStart && regionEnd<=recordEnd) {
-			SCENARIO=4;
-			startPos=regionStart-recordStart;
-			endPos=startPos+(regionEnd-regionStart);
-		}
-		System.out.println("CASE: "+SCENARIO);
-		
-		// Iterate over the CIGAR string to adjust positions
-		int pos=0;
-		int positionToSkipSize=0;
-		int[] thresholds=new int[record.getReadLength()];
-        for (CigarElement cigarElement : record.getCigar().getCigarElements()) {
-            CigarOperator op = cigarElement.getOperator();
-            int length = cigarElement.getLength();
-            if(op==CigarOperator.D) {
-            	positionToSkipSize+=length;
-            	for(int i=pos;i<pos+length;i++) {
-            		thresholds[i]=-1;
-            	}
-            }
-            else if(op==CigarOperator.I){
-            	positionToSkipSize+=length;
-            	for(int i=pos;i<pos+length;i++) {
-            		thresholds[i]=1;
-            	}
-            }
-            pos+=length;
-        }
-        
-		for (int i = startPos; i < endPos; i++) {
-			int currentRealPosition=record.getReferencePositionAtReadPosition(i);
+
+		for (int i = 0; i < record.getReadLength(); i++) {
 			
-			if(currentRealPosition==0 || currentRealPosition<regionStart || currentRealPosition>regionEnd) {
+			int realPosition=record.getReferencePositionAtReadPosition(i+1);
+			int currentReferenceBasePosition=realPosition-1;
+			
+			if(realPosition==0 || realPosition<regionStart || realPosition>regionEnd) {
 				continue;
 			}
 			
-			int threshold=0;
-			if(positionToSkipSize>0) {
-				for(int k=0;k<i;k++) {
-					threshold+=thresholds[k];
-				}
+			Position p = positions.get(realPosition);
+			if (p == null) {
+				p = new Position(chromosome, realPosition, Utils.toUpperCase(referenceBases[currentReferenceBasePosition]));
+				positions.put(realPosition, p);
 			}
 			
-			Position p = positions.get(currentRealPosition+1);
-			if (p == null) {
-				p = new Position(chromosome, currentRealPosition+1, Utils.toUpperCase(referenceBases[currentRealPosition]));
-				positions.put(currentRealPosition+1, p);
-			}
-			if(threshold>0) {
-				System.out.println(i+threshold+" "+(char)readBases[i+threshold]+" pos "+(currentRealPosition+1+threshold)+" ref base:"+(char)referenceBases[currentRealPosition+threshold]);
-			}
-			p.addRead(Utils.toUpperCase(readBases[i+threshold]),mappingQuality);
+			p.addRead(Utils.toUpperCase(record.getReadBases()[i]),mappingQuality);
 		}
+		
+		//TODO: add insertions and deletions detection
+//		int pos=0;
+//		for(CigarElement cigarElement:record.getCigar().getCigarElements()) {
+//			CigarOperator op = cigarElement.getOperator();
+//            int length = cigarElement.getLength();
+//            if(op==CigarOperator.D) {
+//            	
+//            }
+//            else if(op==CigarOperator.I){
+//            	
+//            }
+//            pos+=length;
+//		}
 	}
     
     public final static TreeMap<Integer,Integer> prepareThreadIntervals(final int numberOfChunks,final int regionStart,final int regionEnd){

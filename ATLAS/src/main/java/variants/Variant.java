@@ -9,11 +9,18 @@ public class Variant {
     	this.count=count;
     }
     
+    public Variant(byte base,int count,byte[] indel, boolean isDeletion, boolean isInsert) {
+    	this.base=base;
+    	this.count=count;
+    	this.indel=indel;
+    	this.isDeletion=isDeletion;
+    	this.isInsert=isInsert;
+    }
+    
 	byte base;
-	boolean isStartIndel=false;
-	boolean isDel=false;
-	byte[] ref=null;
-	byte[] alt=null;
+	boolean isDeletion=false;
+	boolean isInsert=false;
+	byte[] indel=null;
 	int count=0;
 	int mappingQuality=0;
 	float score=0f;

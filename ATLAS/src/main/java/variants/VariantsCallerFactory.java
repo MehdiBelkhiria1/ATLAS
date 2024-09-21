@@ -6,6 +6,7 @@ public class VariantsCallerFactory {
 	public static int default_numThreads=(Runtime.getRuntime().availableProcessors()/2)+1;
 	
 	public static VariantsCaller createVariantsCaller(String bamFilePath, String fastaFilePath, String outputFile, String region, Integer numThreads, Integer chunkSize, boolean viewAll) {
+		
 		if(numThreads==null) {
 			numThreads=default_numThreads;
 		}
