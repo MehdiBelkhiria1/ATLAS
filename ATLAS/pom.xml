@@ -4,7 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>ATLAS</groupId>
 	<artifactId>ATLAS</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
 
 	<dependencies>
 		
@@ -39,6 +40,28 @@
 	            <artifactId>maven-surefire-plugin</artifactId>
 	            <version>3.0.0-M7</version> <!-- Ensure you use a compatible version -->
 	        </plugin>
+	        
+	         <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <!-- Add a manifest transformer to make it executable -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>examples.Atlas</mainClass> <!-- main class -->
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
 	    </plugins>
 	</build>
 	
